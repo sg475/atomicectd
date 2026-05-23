@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atomic.eCTD — Free eCTD Viewer, Validator & Compiler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=Outfit:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:    #FAF8F3;
+  --cream-2:  #F3EDE2;
+  --cream-3:  #EBE3D6;
+  --white:    #FFFFFF;
+  --ink:      #1C1915;
+  --ink-2:    #3D372F;
+  --muted:    #7A7068;
+  --faint:    #B8AFA4;
+  --forest:   #1A5C45;
+  --forest-2: #14483A;
+  --forest-bg:#EEF6F1;
+  --forest-bd:rgba(26,92,69,0.2);
+  --amber:    #B8711A;
+  --amber-bg: #FDF3E7;
+  --amber-bd: rgba(184,113,26,0.25);
+  --border:   #E0D9CE;
+  --border-2: #D0C8BC;
+  --shadow:   0 1px 3px rgba(28,25,21,0.06), 0 4px 16px rgba(28,25,21,0.06);
+  --shadow-lg:0 8px 40px rgba(28,25,21,0.10);
+  --r:        12px;
+  --r-sm:     8px;
+  --r-lg:     20px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--cream);
+  color:var(--ink-2);
+  font-family:'Outfit',sans-serif;
+  font-size:16px;
+  line-height:1.75;
+  overflow-x:hidden;
+}
+
+/* ── subtle texture ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23b8afa4' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
+}
+
+/* ── TYPE ── */
+h1,h2,h3,h4{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.1;letter-spacing:-0.01em;color:var(--ink);}
+.label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:400;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--forest);
+}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--forest-bg);
+  border:1px solid var(--forest-bd);
+  border-radius:100px;padding:5px 14px 5px 9px;
+  margin-bottom:1.4rem;
+}
+.chip-dot{width:6px;height:6px;border-radius:50%;background:var(--forest);flex-shrink:0;}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 6%;height:66px;
+  background:rgba(250,248,243,0.9);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark svg{width:32px;height:32px;}
+.nav-brand{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;font-weight:600;
+  color:var(--ink);letter-spacing:0.01em;
+}
+.nav-brand em{color:var(--forest);font-style:normal;}
+.nav-links{display:flex;align-items:center;gap:2rem;list-style:none;}
+.nav-links a{
+  color:var(--muted);text-decoration:none;
+  font-size:14px;font-weight:400;
+  transition:color 0.18s;
+}
+.nav-links a:hover{color:var(--ink);}
+.nav-cta{
+  background:var(--forest)!important;
+  color:#fff!important;
+  font-weight:500!important;
+  padding:9px 22px!important;
+  border-radius:8px!important;
+  font-size:13.5px!important;
+  transition:background 0.18s!important;
+}
+.nav-cta:hover{background:var(--forest-2)!important;}
+
+/* ── HERO ── */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;align-items:center;
+  padding:130px 6% 80px;
+  overflow:hidden;
+}
+.hero-bg-circle{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(26,92,69,0.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{position:relative;z-index:1;max-width:1100px;margin:0 auto;width:100%;
+  display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;}
+@media(max-width:900px){.hero-inner{grid-template-columns:1fr;}}
+
+.hero-text{}
+.hero h1{
+  font-size:clamp(48px,5.5vw,76px);
+  font-weight:600;line-height:1.06;
+  margin-bottom:1.4rem;
+}
+.hero h1 em{color:var(--forest);font-style:italic;}
+.hero-sub{
+  font-size:18px;color:var(--muted);
+  font-weight:300;line-height:1.75;
+  max-width:440px;margin-bottom:2.5rem;
+}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:3rem;}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--forest);color:#fff;
+  font-weight:500;font-size:15px;
+  padding:13px 26px;border-radius:9px;
+  text-decoration:none;border:none;cursor:pointer;
+  font-family:'Outfit',sans-serif;
+  transition:background 0.18s, transform 0.15s;
+}
+.btn-primary:hover{background:var(--forest-2);transform:translateY(-1px);}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;color:var(--ink-2);
+  font-weight:400;font-size:15px;
+  padding:13px 24px;border-radius:9px;
+  text-decoration:none;
+  border:1.5px solid var(--border-2);
+  transition:all 0.18s;
+}
+.btn-ghost:hover{background:var(--white);border-color:var(--border-2);}
+
+.hero-stats{
+  display:flex;gap:2rem;flex-wrap:wrap;
+  padding-top:2rem;
+  border-top:1px solid var(--border);
+}
+.hstat-n{
+  font-family:'Cormorant Garamond',serif;
+  font-size:32px;font-weight:600;
+  color:var(--ink);line-height:1;
+}
+.hstat-n em{color:var(--forest);font-style:normal;}
+.hstat-l{font-size:12px;color:var(--muted);margin-top:4px;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;}
+
+/* ── HERO RIGHT: app card ── */
+.hero-visual{position:relative;}
+.app-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-lg);
+  overflow:hidden;
+}
+.app-card-bar{
+  background:var(--cream-2);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+  display:flex;align-items:center;gap:8px;
+}
+.app-dot{width:10px;height:10px;border-radius:50%;}
+.ad-r{background:#FF6057;} .ad-y{background:#FFBE2D;} .ad-g{background:#27C93F;}
+.app-url{
+  flex:1;background:var(--cream);border:1px solid var(--border);
+  border-radius:5px;padding:4px 10px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);
+  text-align:center;max-width:280px;margin:0 auto;
+}
+
+/* ── STRIP / TICKER ── */
+.strip{
+  background:var(--forest);padding:12px 6%;
+  display:flex;align-items:center;gap:2rem;
+  overflow:hidden;position:relative;z-index:1;
+}
+.strip-item{
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;color:rgba(255,255,255,0.75);
+}
+.strip-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.4);flex-shrink:0;}
+.strip-item strong{color:#fff;font-weight:500;}
+
+/* ── SECTIONS ── */
+section{position:relative;z-index:1;padding:100px 6%;}
+.section-inner{max-width:1100px;margin:0 auto;}
+.s-alt{background:var(--cream-2);}
+.s-white{background:var(--white);}
+
+.s-head{max-width:580px;margin-bottom:3.5rem;}
+.s-head h2{font-size:clamp(32px,3.5vw,52px);margin-bottom:0.8rem;}
+.s-head p{font-size:17px;color:var(--muted);font-weight:300;}
+.s-center{text-align:center;margin:0 auto 3.5rem;}
+
+/* ── FEATURES ── */
+.feat-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1.5rem;
+}
+@media(max-width:860px){.feat-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:540px){.feat-grid{grid-template-columns:1fr;}}
+
+.feat-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:2rem;
+  transition:box-shadow 0.2s,transform 0.2s;
+}
+.feat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px);}
+.feat-icon{
+  width:46px;height:46px;border-radius:10px;
+  background:var(--forest-bg);
+  border:1px solid var(--forest-bd);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:1.25rem;
+}
+.feat-icon svg{width:22px;height:22px;stroke:var(--forest);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.feat-card h3{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;font-weight:600;
+  margin-bottom:0.5rem;color:var(--ink);
+}
+.feat-card p{font-size:14px;color:var(--muted);font-weight:300;line-height:1.65;}
+
+/* ── REGIONS ── */
+.reg-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:10px;
+}
+.reg-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-sm);
+  padding:18px 16px;
+  transition:all 0.18s;cursor:default;
+}
+.reg-card:hover{
+  border-color:var(--forest-bd);
+  background:var(--forest-bg);
+  transform:translateY(-2px);
+  box-shadow:0 4px 16px rgba(26,92,69,0.08);
+}
+.reg-flag{font-size:24px;display:block;margin-bottom:7px;}
+.reg-name{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.reg-auth{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--forest);}
+
+/* ── eCTD V4 ── */
+.v4-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:5rem;align-items:center;
+  max-width:1100px;margin:0 auto;
+}
+@media(max-width:800px){.v4-grid{grid-template-columns:1fr;}}
+.v4-text h2{font-size:clamp(32px,3.5vw,52px);margin-bottom:1rem;}
+.v4-text p{font-size:17px;color:var(--muted);font-weight:300;line-height:1.75;margin-bottom:1.25rem;}
+.v4-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--amber-bg);border:1px solid var(--amber-bd);
+  border-radius:6px;padding:10px 16px;
+  font-size:14px;font-weight:500;color:var(--amber);
+  margin-bottom:1.75rem;
+}
+.v4-visual{display:flex;align-items:center;justify-content:center;}
+
+/* ── EDITIONS ── */
+.ed-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1.5rem;max-width:860px;margin:0 auto;
+}
+@media(max-width:600px){.ed-grid{grid-template-columns:1fr;}}
+.ed-card{
+  background:var(--white);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:2.5rem;
+  position:relative;overflow:hidden;
+}
+.ed-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.ed-lite::after{background:var(--border-2);}
+.ed-full{border-color:var(--forest-bd);}
+.ed-full::after{background:var(--forest);}
+
+.ed-tag{
+  display:inline-block;padding:3px 11px;
+  border-radius:100px;font-size:11px;
+  font-family:'IBM Plex Mono',monospace;
+  letter-spacing:0.07em;margin-bottom:1.5rem;
+}
+.et-free{background:var(--cream-2);color:var(--muted);}
+.et-paid{background:var(--forest-bg);color:var(--forest);border:1px solid var(--forest-bd);}
+.ed-card h3{font-size:26px;margin-bottom:0.4rem;}
+.ed-price{
+  font-family:'Cormorant Garamond',serif;
+  font-size:40px;font-weight:600;
+  color:var(--ink);margin-bottom:0.2rem;line-height:1;
+}
+.ed-price span{font-size:16px;color:var(--muted);font-family:'Outfit',sans-serif;font-weight:300;}
+.ed-sub{font-size:14px;color:var(--muted);font-weight:300;margin-bottom:1.75rem;}
+.f-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:2rem;}
+.f-list li{display:flex;align-items:flex-start;gap:9px;font-size:14px;color:var(--muted);line-height:1.5;}
+.ck{
+  width:18px;height:18px;border-radius:50%;flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+}
+.ck-y{background:var(--forest-bg);}
+.ck-y svg{stroke:var(--forest);}
+.ck-n{background:var(--cream-2);}
+.ck-n svg{stroke:var(--faint);}
+.ck svg{width:10px;height:10px;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── CONTACT ── */
+.contact-wrap{max-width:700px;margin:0 auto;text-align:center;}
+.contact-card{
+  background:var(--white);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:3.5rem;
+  box-shadow:var(--shadow);
+}
+.contact-card h2{font-size:clamp(26px,3vw,42px);margin-bottom:0.75rem;}
+.contact-card > p{font-size:16px;color:var(--muted);font-weight:300;margin-bottom:2rem;}
+.contact-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:2rem;}
+.cpill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 18px;
+  background:var(--cream);border:1px solid var(--border);
+  border-radius:100px;font-size:14px;color:var(--muted);
+  text-decoration:none;transition:all 0.18s;
+}
+.cpill:hover{border-color:var(--forest-bd);color:var(--forest);background:var(--forest-bg);}
+.cpill svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.addr{font-size:12px;color:var(--faint);font-family:'IBM Plex Mono',monospace;line-height:1.7;}
+
+/* ── FOOTER ── */
+footer{
+  padding:2rem 6%;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:1rem;
+  background:var(--cream-2);
+  position:relative;z-index:1;
+}
+.f-brand{
+  font-family:'Cormorant Garamond',serif;
+  font-size:17px;font-weight:600;color:var(--ink);
+}
+.f-brand em{color:var(--forest);font-style:normal;}
+.f-copy{font-size:13px;color:var(--faint);}
+.f-co{font-size:12px;color:var(--faint);font-family:'IBM Plex Mono',monospace;text-align:right;}
+
+/* ── DIVIDER ── */
+hr{border:none;border-top:1px solid var(--border);margin:0;}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.reveal.in{opacity:1;transform:translateY(0);}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  nav{padding:0 4%;}
+  .nav-links{display:none;}
+  .hero{padding:100px 4% 60px;}
+  section{padding:70px 4%;}
+  .contact-card{padding:2rem 1.5rem;}
+  .strip{gap:1.5rem;overflow-x:auto;}
+  footer{flex-direction:column;} .f-co{text-align:left;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="logo-mark">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="3" fill="#1A5C45"/>
+        <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke="#1A5C45" stroke-width="1.3" stroke-opacity="0.55" fill="none"/>
+        <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke="#1A5C45" stroke-width="1.3" stroke-opacity="0.35" fill="none" transform="rotate(60 16 16)"/>
+        <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke="#1A5C45" stroke-width="1.3" stroke-opacity="0.35" fill="none" transform="rotate(120 16 16)"/>
+        <circle cx="16" cy="4" r="1.8" fill="#B8711A" opacity="0.8"/>
+        <circle cx="27" cy="10" r="1.4" fill="#1A5C45" opacity="0.7"/>
+        <circle cx="5" cy="22" r="1.4" fill="#1A5C45" opacity="0.7"/>
+      </svg>
+    </div>
+    <span class="nav-brand">Atomic.<em>eCTD</em></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#why-atomic">Why Atomic.eCTD?</a></li>
+    <li><a href="#regions">Regions</a></li>
+    <li><a href="#editions">Editions</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="https://drive.google.com/file/d/170x21gu9D6yUh3ylvfNFMdP-CVLh3hBn/view?usp=sharing" class="nav-cta">Download Free</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg-circle" style="width:700px;height:700px;top:-200px;right:-200px;"></div>
+  <div class="hero-bg-circle" style="width:400px;height:400px;bottom:-100px;left:-100px;background:radial-gradient(ellipse,rgba(184,113,26,0.05) 0%,transparent 70%);"></div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="chip label">
+        <div class="chip-dot"></div>
+        Fully Free During Testing Phase — Viewer, Validator &amp; Compiler
+      </div>
+      <h1>
+        The Complete eCTD Suite.<br>
+        <em>Completely free.</em>
+      </h1>
+      <p class="hero-sub">
+        Validate, view, <em style="font-style:italic;color:var(--ink);">and compile</em> eCTD submissions across 11+ regulatory authorities — all at no charge while we are in our testing phase. The full program, without limitations.
+      </p>
+      <div class="hero-actions">
+        <a href="https://drive.google.com/file/d/170x21gu9D6yUh3ylvfNFMdP-CVLh3hBn/view?usp=sharing" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download — It's Free
+        </a>
+        <a href="#editions" class="btn-ghost">
+          See What's Included
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="hstat-n">11<em>+</em></div>
+          <div class="hstat-l">Regulatory Regions</div>
+        </div>
+        <div>
+          <div class="hstat-n"><em>3</em></div>
+          <div class="hstat-l">Tools in One</div>
+        </div>
+        <div>
+          <div class="hstat-n">$<em>0</em></div>
+          <div class="hstat-l">Full Program Cost</div>
+        </div>
+        <div>
+          <div class="hstat-n">v<em>4</em></div>
+          <div class="hstat-l">eCTD Ready</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App UI card -->
+    <div class="hero-visual reveal">
+      <div class="app-card">
+        <div class="app-card-bar">
+          <div class="app-dot ad-r"></div>
+          <div class="app-dot ad-y"></div>
+          <div class="app-dot ad-g"></div>
+          <div class="app-url">Atomic.eCTD — Validation Dashboard</div>
+        </div>
+        <svg viewBox="0 0 520 330" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+          <!-- bg -->
+          <rect width="520" height="330" fill="#FAF8F3"/>
+          <!-- sidebar -->
+          <rect width="140" height="330" fill="#F3EDE2"/>
+          <rect x="140" width="1" height="330" fill="#E0D9CE"/>
+          <!-- sidebar logo -->
+          <text x="16" y="26" font-family="Cormorant Garamond,serif" font-size="13.5" font-weight="600" fill="#1C1915">Atomic.<tspan fill="#1A5C45">eCTD</tspan></text>
+          <line x1="10" y1="34" x2="132" y2="34" stroke="#E0D9CE" stroke-width="1"/>
+          <!-- nav items -->
+          <rect x="8" y="40" width="126" height="26" rx="5" fill="rgba(26,92,69,0.1)"/>
+          <text x="22" y="57.5" font-family="Outfit,sans-serif" font-size="11.5" fill="#1A5C45" font-weight="500">Dashboard</text>
+          <rect x="14" y="45.5" width="2.5" height="14" rx="1.5" fill="#1A5C45"/>
+          <text x="22" y="86" font-family="Outfit,sans-serif" font-size="11.5" fill="#7A7068">Submissions</text>
+          <text x="22" y="108" font-family="Outfit,sans-serif" font-size="11.5" fill="#7A7068">Validation</text>
+          <text x="22" y="130" font-family="Outfit,sans-serif" font-size="11.5" fill="#7A7068">Reports</text>
+          <text x="22" y="152" font-family="Outfit,sans-serif" font-size="11.5" fill="#7A7068">Settings</text>
+          <line x1="10" y1="164" x2="132" y2="164" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="16" y="178" font-family="IBM Plex Mono,monospace" font-size="8" fill="#B8AFA4" letter-spacing="1.2">REGIONS</text>
+          <rect x="10" y="184" width="52" height="17" rx="4" fill="rgba(26,92,69,0.08)"/>
+          <text x="36" y="196.5" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#1A5C45" text-anchor="middle">EU EMA</text>
+          <rect x="68" y="184" width="46" height="17" rx="4" fill="rgba(26,92,69,0.08)"/>
+          <text x="91" y="196.5" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#1A5C45" text-anchor="middle">US FDA</text>
+          <rect x="10" y="206" width="44" height="17" rx="4" fill="#EBE3D6"/>
+          <text x="32" y="218.5" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068" text-anchor="middle">Canada</text>
+          <rect x="60" y="206" width="34" height="17" rx="4" fill="#EBE3D6"/>
+          <text x="77" y="218.5" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068" text-anchor="middle">Japan</text>
+          <!-- main topbar -->
+          <rect x="140" width="380" height="40" fill="#FFFFFF"/>
+          <line x1="140" y1="40" x2="520" y2="40" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="156" y="25" font-family="Outfit,sans-serif" font-size="13" font-weight="500" fill="#1C1915">Validation Dashboard</text>
+          <!-- pass badge -->
+          <rect x="420" y="10" width="62" height="20" rx="5" fill="rgba(26,92,69,0.1)"/>
+          <circle cx="432" cy="20" r="3.5" fill="#1A5C45"/>
+          <text x="440" y="24" font-family="IBM Plex Mono,monospace" font-size="9" fill="#1A5C45">PASS</text>
+          <!-- stat cards -->
+          <rect x="156" y="52" width="80" height="58" rx="7" fill="#FAF8F3" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="168" y="70" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">CHECKS</text>
+          <text x="168" y="96" font-family="Cormorant Garamond,serif" font-size="22" font-weight="600" fill="#1C1915">2,847</text>
+
+          <rect x="246" y="52" width="80" height="58" rx="7" fill="#FAF8F3" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="258" y="70" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">PASSED</text>
+          <text x="258" y="96" font-family="Cormorant Garamond,serif" font-size="22" font-weight="600" fill="#1A5C45">2,814</text>
+
+          <rect x="336" y="52" width="76" height="58" rx="7" fill="#FAF8F3" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="348" y="70" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">WARNINGS</text>
+          <text x="348" y="96" font-family="Cormorant Garamond,serif" font-size="22" font-weight="600" fill="#B8711A">33</text>
+
+          <rect x="422" y="52" width="74" height="58" rx="7" fill="#FAF8F3" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="434" y="70" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">ERRORS</text>
+          <text x="434" y="96" font-family="Cormorant Garamond,serif" font-size="22" font-weight="600" fill="#C04040">0</text>
+
+          <!-- results table -->
+          <rect x="156" y="122" width="250" height="196" rx="7" fill="#FFFFFF" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="170" y="141" font-family="Outfit,sans-serif" font-size="11.5" font-weight="500" fill="#1C1915">Validation Results</text>
+          <line x1="156" y1="150" x2="406" y2="150" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="170" y="163" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="1">RULE</text>
+          <text x="230" y="163" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="1">DESCRIPTION</text>
+          <text x="367" y="163" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="1">STATUS</text>
+          <!-- rows -->
+          <line x1="156" y1="171" x2="406" y2="171" stroke="#F3EDE2" stroke-width="1"/>
+          <text x="170" y="184" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068">M1-001</text>
+          <text x="230" y="184" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">Regional M1 completeness</text>
+          <rect x="362" y="174" width="36" height="14" rx="3.5" fill="rgba(26,92,69,0.1)"/>
+          <text x="380" y="184.5" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="middle">PASS</text>
+
+          <line x1="156" y1="193" x2="406" y2="193" stroke="#F3EDE2" stroke-width="1"/>
+          <text x="170" y="206" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068">M2-101</text>
+          <text x="230" y="206" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">CTD summary documents</text>
+          <rect x="362" y="196" width="36" height="14" rx="3.5" fill="rgba(26,92,69,0.1)"/>
+          <text x="380" y="206.5" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="middle">PASS</text>
+
+          <rect x="156" y="203" width="250" height="22" fill="rgba(184,113,26,0.04)"/>
+          <line x1="156" y1="215" x2="406" y2="215" stroke="#F3EDE2" stroke-width="1"/>
+          <text x="170" y="228" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068">M3-204</text>
+          <text x="230" y="228" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">Sequence number gap</text>
+          <rect x="358" y="218" width="44" height="14" rx="3.5" fill="rgba(184,113,26,0.12)"/>
+          <text x="380" y="228.5" font-family="IBM Plex Mono,monospace" font-size="8" fill="#B8711A" text-anchor="middle">WARN</text>
+
+          <line x1="156" y1="237" x2="406" y2="237" stroke="#F3EDE2" stroke-width="1"/>
+          <text x="170" y="250" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068">M4-001</text>
+          <text x="230" y="250" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">Nonclinical study reports</text>
+          <rect x="362" y="240" width="36" height="14" rx="3.5" fill="rgba(26,92,69,0.1)"/>
+          <text x="380" y="250.5" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="middle">PASS</text>
+
+          <line x1="156" y1="259" x2="406" y2="259" stroke="#F3EDE2" stroke-width="1"/>
+          <text x="170" y="272" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#7A7068">FDA-V4</text>
+          <text x="230" y="272" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">eCTD v4 schema check</text>
+          <rect x="362" y="262" width="36" height="14" rx="3.5" fill="rgba(26,92,69,0.1)"/>
+          <text x="380" y="272.5" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="middle">PASS</text>
+
+          <!-- score -->
+          <text x="170" y="302" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">COMPLIANCE</text>
+          <rect x="170" y="308" width="226" height="5" rx="2.5" fill="#EBE3D6"/>
+          <rect x="170" y="308" width="218" height="5" rx="2.5" fill="#1A5C45"/>
+          <text x="406" y="313" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="end">98.8%</text>
+
+          <!-- right panel -->
+          <rect x="416" y="122" width="90" height="196" rx="7" fill="#FFFFFF" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="430" y="141" font-family="Outfit,sans-serif" font-size="10.5" font-weight="500" fill="#1C1915">Submission</text>
+          <line x1="416" y1="150" x2="506" y2="150" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="430" y="165" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">SEQUENCE</text>
+          <text x="430" y="182" font-family="Cormorant Garamond,serif" font-size="20" font-weight="600" fill="#1C1915">0005</text>
+          <text x="430" y="200" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">AUTHORITY</text>
+          <rect x="430" y="206" width="48" height="15" rx="3.5" fill="rgba(26,92,69,0.1)"/>
+          <text x="454" y="217" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="middle">EU EMA</text>
+          <text x="430" y="238" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#B8AFA4" letter-spacing="0.8">MODULES</text>
+          <text x="430" y="253" font-family="Outfit,sans-serif" font-size="9.5" fill="#1C1915">M1 Regional</text>
+          <text x="430" y="267" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">M2 Summary</text>
+          <text x="430" y="281" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">M3 Quality</text>
+          <text x="430" y="295" font-family="Outfit,sans-serif" font-size="9.5" fill="#7A7068">M5 Clinical</text>
+          <!-- export btn -->
+          <rect x="416" y="290" width="90" height="28" rx="0 0 7 7" fill="#1A5C45"/>
+          <text x="461" y="309" font-family="Outfit,sans-serif" font-size="9.5" font-weight="500" fill="#fff" text-anchor="middle">Export PDF</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STRIP -->
+<div class="strip">
+  <div class="strip-item"><div class="strip-dot"></div><strong>EU EMA</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>US FDA</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>Health Canada</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>PMDA Japan</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>ANVISA Brazil</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>TGA Australia</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>COFEPRIS Mexico</strong></div>
+  <div class="strip-item"><div class="strip-dot"></div><strong>SAHPRA · SFDA · JFDA</strong></div>
+</div>
+
+<!-- FEATURES -->
+<section id="features" class="s-white">
+  <div class="section-inner">
+    <div class="s-head reveal">
+      <div class="chip label"><div class="chip-dot"></div>Core Capabilities</div>
+      <h2>Everything a regulatory professional needs</h2>
+      <p>Built for precision, speed, and reliability — without the enterprise price tag or the complexity.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></div>
+        <h3>Multi-Region Validation</h3>
+        <p>Test against 11 regulatory authorities simultaneously — EU EMA, US FDA, Health Canada, PMDA Japan, ANVISA, TGA, and more from a single interface.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <h3>Professional Reports</h3>
+        <p>Export validation reports in TXT, CSV, HTML, and PDF. Clean, structured outputs ready to share with your team or attach to a client submission.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+        <h3>Interactive eCTD Viewer</h3>
+        <p>Navigate dossier structure with an intuitive tree view, track document lifecycle across sequences, and preview PDFs instantly — all in one window.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <h3>Zero Setup</h3>
+        <p>No installer, no configuration, no IT tickets. Download, run, and validate immediately. Works fully offline after first launch.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+        <h3>Database-Driven Reliability</h3>
+        <p>The Full edition runs on a robust database backend, maintaining consistent performance even with large dossiers and complex multi-sequence submissions.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <h3>Full Lifecycle Management</h3>
+        <p>The Full edition adds intelligent sequence creation wizards, letting you build new eCTD sequences from scratch while staying compliant at every step.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- WHY ATOMIC -->
+<section class="s-alt" id="why-atomic">
+  <div class="section-inner">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;max-width:1100px;margin:0 auto;">
+
+      <!-- Left: explanation -->
+      <div class="reveal">
+        <div class="chip label"><div class="chip-dot"></div>The Name Explained</div>
+        <h2>Why <em>Atomic.</em>eCTD?</h2>
+        <p style="font-size:17px;color:var(--muted);font-weight:300;line-height:1.75;margin:1rem 0 1.5rem;">
+          The name carries two meanings that reinforce each other — one from computer science, one from chemistry — and both are deliberate.
+        </p>
+
+        <!-- Meaning 1 -->
+        <div style="display:flex;gap:16px;margin-bottom:1.75rem;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--forest-bg);border:1px solid var(--forest-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="2" fill="var(--forest)" stroke="none"/></svg>
+          </div>
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--ink);margin-bottom:0.3rem;">Atomic database operations</div>
+            <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.65;">In computer science, an <em style="font-style:italic;color:var(--ink-2);">atomic</em> operation either completes entirely or not at all — there is no half-written, corrupted in-between state. Every read, write, migration, and compilation in Atomic.eCTD is a single database transaction with this guarantee. If anything goes wrong, nothing is left broken. For regulatory submissions where data integrity is non-negotiable, this is the foundation everything else is built on.</p>
+          </div>
+        </div>
+
+        <!-- Meaning 2 -->
+        <div style="display:flex;gap:16px;margin-bottom:1.75rem;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--amber-bg);border:1px solid var(--amber-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--ink);margin-bottom:0.3rem;">The atom as the indivisible unit</div>
+            <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.65;">In chemistry, the atom is the smallest unit that retains the identity of an element. An eCTD sequence is the same: the fundamental, indivisible unit of a regulatory submission — a complete, self-contained package that either exists as a valid whole or not at all. The orbital logo is not decorative; it is a precise metaphor for how the software handles your data.</p>
+          </div>
+        </div>
+
+        <!-- Practical upshot -->
+        <div style="background:var(--white);border:1px solid var(--border);border-left:3px solid var(--forest);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:1rem 1.25rem;">
+          <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.65;margin:0;">
+            <strong style="font-weight:500;color:var(--ink);">The practical upshot:</strong> drafts are counted from the database, not scanned from the filesystem. All data lives in one backup location. Legacy files are migrated automatically and safely the first time they are accessed. The architecture is ready for versioning, sharing, and templates — because atomic transactions make all of that straightforward to build reliably.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: visual diagram -->
+      <div class="reveal" style="display:flex;justify-content:center;">
+        <svg viewBox="0 0 340 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;">
+
+          <!-- background card -->
+          <rect x="10" y="10" width="320" height="360" rx="16" fill="#FFFFFF" stroke="#E0D9CE" stroke-width="1"/>
+
+          <!-- header -->
+          <rect x="10" y="10" width="320" height="52" rx="16" fill="#F3EDE2"/>
+          <rect x="10" y="46" width="320" height="16" fill="#F3EDE2"/>
+          <line x1="10" y1="62" x2="330" y2="62" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="170" y="41" font-family="Cormorant Garamond,serif" font-size="14" font-weight="600" fill="#1C1915" text-anchor="middle">Atomic Transaction Model</text>
+
+          <!-- central nucleus -->
+          <circle cx="170" cy="185" r="34" fill="#EEF6F1" stroke="rgba(26,92,69,0.25)" stroke-width="1.5"/>
+          <circle cx="170" cy="185" r="22" fill="rgba(26,92,69,0.12)" stroke="rgba(26,92,69,0.35)" stroke-width="1"/>
+          <circle cx="170" cy="185" r="11" fill="rgba(26,92,69,0.3)"/>
+          <text x="170" y="181" font-family="IBM Plex Mono,monospace" font-size="7" fill="#1A5C45" text-anchor="middle">eCTD</text>
+          <text x="170" y="192" font-family="Cormorant Garamond,serif" font-size="9" font-weight="600" fill="#1A5C45" text-anchor="middle">DB</text>
+
+          <!-- orbits -->
+          <ellipse cx="170" cy="185" rx="110" ry="44" stroke="rgba(26,92,69,0.15)" stroke-width="1.2" fill="none" stroke-dasharray="4 3"/>
+          <ellipse cx="170" cy="185" rx="110" ry="44" stroke="rgba(26,92,69,0.1)" stroke-width="1.2" fill="none" stroke-dasharray="4 3" transform="rotate(60 170 185)"/>
+          <ellipse cx="170" cy="185" rx="110" ry="44" stroke="rgba(26,92,69,0.1)" stroke-width="1.2" fill="none" stroke-dasharray="4 3" transform="rotate(120 170 185)"/>
+
+          <!-- animated electrons -->
+          <circle r="5" fill="#1A5C45" opacity="0.8">
+            <animateMotion dur="5s" repeatCount="indefinite"><mpath href="#db1"/></animateMotion>
+          </circle>
+          <circle r="4" fill="#B8711A" opacity="0.7">
+            <animateMotion dur="4s" repeatCount="indefinite" begin="1.5s"><mpath href="#db2"/></animateMotion>
+          </circle>
+          <circle r="3.5" fill="#1A5C45" opacity="0.55">
+            <animateMotion dur="6s" repeatCount="indefinite" begin="0.8s"><mpath href="#db3"/></animateMotion>
+          </circle>
+          <defs>
+            <path id="db1" d="M280,185 A110,44 0 1,1 280,184.9"/>
+            <path id="db2" d="M280,185 A110,44 0 1,1 280,184.9" transform="rotate(60 170 185)"/>
+            <path id="db3" d="M280,185 A110,44 0 1,1 280,184.9" transform="rotate(120 170 185)"/>
+          </defs>
+
+          <!-- satellite nodes -->
+          <!-- Viewer -->
+          <rect x="18" y="100" width="72" height="42" rx="8" fill="#EEF6F1" stroke="rgba(26,92,69,0.2)" stroke-width="1"/>
+          <text x="54" y="118" font-family="Outfit,sans-serif" font-size="9" font-weight="500" fill="#1A5C45" text-anchor="middle">Viewer</text>
+          <text x="54" y="133" font-family="IBM Plex Mono,monospace" font-size="8" fill="#7A7068" text-anchor="middle">read-only</text>
+          <line x1="90" y1="121" x2="136" y2="160" stroke="rgba(26,92,69,0.2)" stroke-width="1" stroke-dasharray="3 2"/>
+
+          <!-- Validator -->
+          <rect x="18" y="220" width="72" height="42" rx="8" fill="#EEF6F1" stroke="rgba(26,92,69,0.2)" stroke-width="1"/>
+          <text x="54" y="238" font-family="Outfit,sans-serif" font-size="9" font-weight="500" fill="#1A5C45" text-anchor="middle">Validator</text>
+          <text x="54" y="253" font-family="IBM Plex Mono,monospace" font-size="8" fill="#7A7068" text-anchor="middle">atomic check</text>
+          <line x1="90" y1="241" x2="136" y2="205" stroke="rgba(26,92,69,0.2)" stroke-width="1" stroke-dasharray="3 2"/>
+
+          <!-- Compiler -->
+          <rect x="250" y="100" width="72" height="42" rx="8" fill="#FDF3E7" stroke="rgba(184,113,26,0.25)" stroke-width="1"/>
+          <text x="286" y="118" font-family="Outfit,sans-serif" font-size="9" font-weight="500" fill="#B8711A" text-anchor="middle">Compiler</text>
+          <text x="286" y="133" font-family="IBM Plex Mono,monospace" font-size="8" fill="#7A7068" text-anchor="middle">atomic write</text>
+          <line x1="250" y1="121" x2="204" y2="160" stroke="rgba(184,113,26,0.2)" stroke-width="1" stroke-dasharray="3 2"/>
+
+          <!-- Reports -->
+          <rect x="250" y="220" width="72" height="42" rx="8" fill="#EEF6F1" stroke="rgba(26,92,69,0.2)" stroke-width="1"/>
+          <text x="286" y="238" font-family="Outfit,sans-serif" font-size="9" font-weight="500" fill="#1A5C45" text-anchor="middle">Reports</text>
+          <text x="286" y="253" font-family="IBM Plex Mono,monospace" font-size="8" fill="#7A7068" text-anchor="middle">consistent read</text>
+          <line x1="250" y1="241" x2="204" y2="205" stroke="rgba(26,92,69,0.2)" stroke-width="1" stroke-dasharray="3 2"/>
+
+          <!-- guarantee label at bottom -->
+          <rect x="30" y="308" width="280" height="46" rx="8" fill="#F3EDE2" stroke="#E0D9CE" stroke-width="1"/>
+          <text x="170" y="326" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#B8AFA4" text-anchor="middle" letter-spacing="1">GUARANTEE</text>
+          <text x="170" y="344" font-family="Cormorant Garamond,serif" font-size="13" font-weight="600" fill="#1C1915" text-anchor="middle">Complete or not at all. Never half-done.</text>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- REGIONS -->
+<section id="regions">
+  <div class="section-inner">
+    <div class="s-head s-center reveal">
+      <div class="chip label" style="margin:0 auto 1.4rem;"><div class="chip-dot"></div>Global Coverage</div>
+      <h2>One tool. Eleven authorities.</h2>
+      <p>Consistent workflow and a single licence across every region you operate in. No juggling separate tools.</p>
+    </div>
+    <div class="reg-grid reveal">
+      <div class="reg-card"><span class="reg-flag">🇪🇺</span><div class="reg-name">European Union</div><div class="reg-auth">EMA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇺🇸</span><div class="reg-name">United States</div><div class="reg-auth">FDA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇨🇦</span><div class="reg-name">Canada</div><div class="reg-auth">Health Canada</div></div>
+      <div class="reg-card"><span class="reg-flag">🇯🇵</span><div class="reg-name">Japan</div><div class="reg-auth">PMDA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇧🇷</span><div class="reg-name">Brazil</div><div class="reg-auth">ANVISA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇦🇺</span><div class="reg-name">Australia</div><div class="reg-auth">TGA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇲🇽</span><div class="reg-name">Mexico</div><div class="reg-auth">COFEPRIS</div></div>
+      <div class="reg-card"><span class="reg-flag">🇿🇦</span><div class="reg-name">South Africa</div><div class="reg-auth">SAHPRA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇸🇦</span><div class="reg-name">Saudi Arabia / GCC</div><div class="reg-auth">SFDA</div></div>
+      <div class="reg-card"><span class="reg-flag">🇹🇭</span><div class="reg-name">Thailand</div><div class="reg-auth">FDA Thailand</div></div>
+      <div class="reg-card"><span class="reg-flag">🇯🇴</span><div class="reg-name">Jordan</div><div class="reg-auth">JFDA</div></div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- V4 SECTION -->
+<section class="s-alt">
+  <div class="v4-grid">
+    <div class="v4-text reveal">
+      <div class="chip label"><div class="chip-dot"></div>Future-Proof</div>
+      <h2>eCTD v4 is here. Are you prepared?</h2>
+      <div class="v4-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Already mandatory in Japan (PMDA) since 2023
+      </div>
+      <p>eCTD v4 — the Regulated Product Submission format — is transforming how submissions are structured worldwide. Japan made it mandatory first. More authorities will follow.</p>
+      <p>Atomic.eCTD is built on a modern, maintainable architecture with an active development roadmap, so your tooling stays current with every regulatory change, automatically.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:2rem;">
+        <a href="https://drive.google.com/file/d/170x21gu9D6yUh3ylvfNFMdP-CVLh3hBn/view?usp=sharing" class="btn-primary">Download Free Now</a>
+        <a href="#contact" class="btn-ghost">Enquire About IQ/OQ Package</a>
+      </div>
+    </div>
+    <div class="v4-visual reveal">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;">
+        <defs>
+          <radialGradient id="ng" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#EEF6F1"/>
+            <stop offset="100%" stop-color="#F3EDE2"/>
+          </radialGradient>
+        </defs>
+        <circle cx="150" cy="150" r="148" fill="url(#ng)" stroke="#E0D9CE" stroke-width="1"/>
+        <!-- orbits -->
+        <ellipse cx="150" cy="150" rx="120" ry="46" stroke="rgba(26,92,69,0.18)" stroke-width="1.5" fill="none"/>
+        <ellipse cx="150" cy="150" rx="120" ry="46" stroke="rgba(26,92,69,0.13)" stroke-width="1.5" fill="none" transform="rotate(60 150 150)"/>
+        <ellipse cx="150" cy="150" rx="120" ry="46" stroke="rgba(26,92,69,0.13)" stroke-width="1.5" fill="none" transform="rotate(120 150 150)"/>
+        <!-- electrons -->
+        <circle r="6" fill="#1A5C45" opacity="0.85">
+          <animateMotion dur="4.5s" repeatCount="indefinite"><mpath href="#o1"/></animateMotion>
+        </circle>
+        <circle r="5" fill="#B8711A" opacity="0.75">
+          <animateMotion dur="3.5s" repeatCount="indefinite" begin="1.2s"><mpath href="#o2"/></animateMotion>
+        </circle>
+        <circle r="4.5" fill="#1A5C45" opacity="0.6">
+          <animateMotion dur="5.5s" repeatCount="indefinite" begin="0.6s"><mpath href="#o3"/></animateMotion>
+        </circle>
+        <defs>
+          <path id="o1" d="M270,150 A120,46 0 1,1 270,149.9"/>
+          <path id="o2" d="M270,150 A120,46 0 1,1 270,149.9" transform="rotate(60 150 150)"/>
+          <path id="o3" d="M270,150 A120,46 0 1,1 270,149.9" transform="rotate(120 150 150)"/>
+        </defs>
+        <!-- nucleus -->
+        <circle cx="150" cy="150" r="38" fill="rgba(26,92,69,0.06)" stroke="rgba(26,92,69,0.2)" stroke-width="1.5"/>
+        <circle cx="150" cy="150" r="26" fill="rgba(26,92,69,0.1)" stroke="rgba(26,92,69,0.3)" stroke-width="1"/>
+        <circle cx="150" cy="150" r="14" fill="rgba(26,92,69,0.25)"/>
+        <text x="150" y="146" font-family="IBM Plex Mono,monospace" font-size="8" fill="#1A5C45" text-anchor="middle" font-weight="400">eCTD</text>
+        <text x="150" y="159" font-family="Cormorant Garamond,serif" font-size="11" fill="#1A5C45" text-anchor="middle" font-weight="600">v4</text>
+        <!-- authority labels -->
+        <text x="274" y="148" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#B8AFA4">FDA</text>
+        <text x="18" y="148" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#B8AFA4">EMA</text>
+        <text x="136" y="26" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#B8AFA4">PMDA</text>
+        <text x="130" y="284" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#B8AFA4">ANVISA</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- EDITIONS -->
+<section id="editions" class="s-white">
+  <div class="section-inner">
+    <div class="s-head s-center reveal">
+      <div class="chip label" style="margin:0 auto 1.4rem;"><div class="chip-dot"></div>Availability &amp; Pricing</div>
+      <h2>Fully functional. Completely free.</h2>
+      <p>During our testing phase, the entire Atomic.eCTD program — viewer, validator, <em>and</em> compiler — is available at no charge. The only paid option is our IQ/OQ documentation and validated-environment package, designed for GMP-regulated facilities.</p>
+    </div>
+
+    <!-- Testing phase banner -->
+    <div class="reveal" style="background:var(--forest-bg);border:1.5px solid var(--forest-bd);border-radius:var(--r);padding:1.5rem 2rem;margin-bottom:2rem;display:flex;align-items:flex-start;gap:16px;max-width:860px;margin-left:auto;margin-right:auto;margin-bottom:2rem;">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--forest);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:0.3rem;">Currently in Testing Phase</div>
+        <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.65;margin:0;">We are releasing the full Atomic.eCTD program — including the eCTD compiler — free of charge while we complete testing. This includes all core functionality with no feature restrictions. We welcome feedback from regulatory professionals who put the software through its paces.</p>
+      </div>
+    </div>
+
+    <div class="ed-grid reveal" style="max-width:860px;margin:0 auto;">
+      <!-- Free full program -->
+      <div class="ed-card ed-full" style="border-color:var(--forest-bd);">
+        <span class="ed-tag et-paid" style="background:var(--forest-bg);color:var(--forest);border:1px solid var(--forest-bd);">FREE — TESTING PHASE</span>
+        <h3>Full Program</h3>
+        <div class="ed-price" style="color:var(--forest);">$0 <span>/ licence</span></div>
+        <p class="ed-sub">The complete eCTD suite — viewer, validator, and compiler — fully functional, no restrictions, no time limit.</p>
+        <ul class="f-list">
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>eCTD Viewer — full dossier navigation</li>
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Validation against 11+ regulatory authorities</li>
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>eCTD Compiler — create new sequences</li>
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Full document lifecycle tracking</li>
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Export reports: TXT, CSV, HTML, PDF</li>
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Database-driven for large dossiers</li>
+          <li><span class="ck ck-y"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Zero setup — download and run</li>
+          <li><span class="ck ck-n"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span style="color:var(--faint)">IQ/OQ qualification documentation</span></li>
+          <li><span class="ck ck-n"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span style="color:var(--faint)">User-level access &amp; audit trail controls</span></li>
+        </ul>
+        <a href="https://drive.google.com/file/d/170x21gu9D6yUh3ylvfNFMdP-CVLh3hBn/view?usp=sharing" class="btn-primary" style="width:100%;justify-content:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Free Now
+        </a>
+      </div>
+
+      <!-- IQ/OQ Validated -->
+      <div class="ed-card ed-lite" style="border-color:var(--amber-bd);">
+        <span class="ed-tag" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd);">GMP / VALIDATED ENVIRONMENTS</span>
+        <h3>IQ/OQ Package</h3>
+        <div class="ed-price" style="color:var(--amber);">Contact <span>for pricing</span></div>
+        <p class="ed-sub">For pharmaceutical companies operating under GxP requirements who need formally qualified software in their regulated environment.</p>
+        <ul class="f-list">
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in the Free Full Program</li>
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>Installation Qualification (IQ) documentation</li>
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>Operational Qualification (OQ) protocol &amp; report</li>
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>User-level access controls &amp; role management</li>
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>Audit trail for GxP/21 CFR Part 11 compliance</li>
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>Dedicated support from the development team</li>
+          <li><span class="ck ck-y" style="background:var(--amber-bg);"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><polyline points="20 6 9 17 4 12"/></svg></span>One-time purchase — lifetime updates</li>
+        </ul>
+        <a href="mailto:sg@sgslab.com?subject=Atomic.eCTD IQ/OQ Package Enquiry" class="btn-ghost" style="width:100%;justify-content:center;border-color:var(--amber-bd);color:var(--amber);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contact Us
+        </a>
+      </div>
+    </div>
+
+    <p style="text-align:center;margin-top:1.75rem;font-size:14px;color:var(--faint);max-width:620px;margin-left:auto;margin-right:auto;" class="reveal">
+      Not sure which option fits your situation? <a href="mailto:sg@sgslab.com" style="color:var(--forest);text-decoration:none;">Drop us a line</a> — we're happy to advise whether the IQ/OQ package is required for your regulatory environment.
+    </p>
+  </div>
+</section>
+
+<hr>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-wrap reveal">
+    <div class="contact-card">
+      <div class="chip label" style="margin:0 auto 1.4rem;"><div class="chip-dot"></div>Get in Touch</div>
+      <h2>Questions? We're happy to help.</h2>
+      <p>Whether you'd like to give feedback during our testing phase, enquire about the IQ/OQ qualification package, or just ask a technical question — reach out directly.</p>
+      <div class="contact-pills">
+        <a href="mailto:sg@sgslab.com" class="cpill">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          sg@sgslab.com
+        </a>
+        <a href="tel:+491511248064" class="cpill">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.08 6.08l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          +49 1511 2480646
+        </a>
+        <div class="cpill">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Budapest, Hungary
+        </div>
+      </div>
+      <p class="addr">SGS Pharma Magyarország Kft.<br>Honvéd Utca 8. 1.em.2 · 1054 Budapest, Hungary</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-brand">Atomic.<em>eCTD</em></div>
+  <div class="f-copy">© 2026 Atomic.eCTD. All rights reserved.</div>
+  <div class="f-co">SGS Pharma Magyarország Kft.<br>Budapest, Hungary</div>
+</footer>
+
+<script>
+const els = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e,i) => {
+    if(e.isIntersecting){
+      setTimeout(()=>e.target.classList.add('in'), i*90);
+      obs.unobserve(e.target);
+    }
+  });
+},{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
+els.forEach(el=>obs.observe(el));
+
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',function(e){
+    const t=document.querySelector(this.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>
